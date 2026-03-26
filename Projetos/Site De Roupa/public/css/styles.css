@@ -1,0 +1,204 @@
+:root {
+    --bg-dark: #0f172a;
+    --bg-card: #1e293b;
+    --bg-row: #334155;
+    --primary: #8b5cf6;
+    --primary-glow: #a78bfa;
+    --accent: #06ffa5;
+    --accent-secondary: #00d4ff;
+    --gold: #fbbf24;
+    --silver: #94a3b8;
+    --bronze: #cd7f32;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --danger: #ef4444;
+    --radius: 12px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-dark);
+    background-image:
+        radial-gradient(ellipse at top, #1e1b4b 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, #064e3b 0%, transparent 50%);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+.wrap {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 16px;
+}
+
+.card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    padding: 24px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+h1 {
+    text-align: center;
+    margin: 8px 0 24px;
+    font-size: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--primary-glow), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+}
+
+/* Table Styles */
+.tabela-cabecalho {
+    display: grid;
+    grid-template-columns: 60px 1fr 120px 120px;
+    gap: 12px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    border-radius: 10px 10px 0 0;
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.lista-jogos {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--bg-card);
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+}
+
+.item {
+    display: grid;
+    grid-template-columns: 60px 1fr 120px 120px;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--bg-row);
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.item:hover {
+    background: #475569;
+    transform: scale(1.01);
+}
+
+.item:last-child {
+    border-radius: 0 0 10px 10px;
+}
+
+/* Position styling */
+.posicao {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.posicao.ouro {
+    color: var(--gold);
+    text-shadow: 0 0 10px var(--gold);
+}
+
+.posicao.prata {
+    color: var(--silver);
+    text-shadow: 0 0 10px var(--silver);
+}
+
+.posicao.bronze {
+    color: var(--bronze);
+    text-shadow: 0 0 10px var(--bronze);
+}
+
+.jogador {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.pontuacao,
+.pontos {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.pontuacao {
+    color: var(--accent);
+}
+
+.pontos {
+    color: var(--accent-secondary);
+}
+
+.badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(139, 92, 246, 0.3);
+    color: var(--primary-glow);
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Form Styles */
+.row {
+    display: grid;
+    grid-template-columns: 1fr 120px 120px;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+input {
+    padding: 14px;
+    border-radius: 8px;
+    border: 2px solid #475569;
+    background: #0f172a;
+    color: var(--text);
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+button {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), #7c3aed);
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
+}
+
+.vazio {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-style: italic;
+}

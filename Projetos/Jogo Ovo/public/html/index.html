@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🥚 Egg Ascension — Clicker do Dragão</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+
+  :root {
+    --bg-deep: #0a0608;
+    --bg-mid: #130d10;
+    --bg-panel: #1c1318;
+    --bg-card: #231820;
+    --accent-gold: #d4a843;
+    --accent-gold-light: #f0c96a;
+    --accent-ember: #e84a2f;
+    --accent-teal: #2de8c8;
+    --accent-purple: #9b5de5;
+    --accent-diamond: #89d4f5;
+    --text-primary: #f0e8d8;
+    --text-muted: #8a7a6a;
+    --text-dim: #4a3a30;
+    --border-subtle: #2a1e1a;
+    --glow-gold: 0 0 20px rgba(212,168,67,0.4);
+    --glow-teal: 0 0 20px rgba(45,232,200,0.4);
+    --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(155,93,229,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(232,74,47,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(45,232,200,0.04) 0%, transparent 50%);
+  }
+
+  /* LAYOUT */
+  #app {
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: "header header header" "left center right" "footer footer footer";
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  #header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(10,6,8,0.9);
+    backdrop-filter: blur(12px);
+    position: sticky; top:0; z-index:100;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  #header h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1rem;
+    color: var(--accent-gold);
+    text-shadow: var(--glow-gold);
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+  .currency-display { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+  .currency-item { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .currency-value { font-size:1.15rem; font-weight:600; color:var(--accent-gold-light); text-shadow:var(--glow-gold); }
+  .currency-value.diamond { color:var(--accent-diamond); text-shadow:0 0 15px rgba(137,212,245,0.5); }
+  .currency-value.frag { color:var(--accent-purple); text-shadow:0 0 15px rgba(155,93,229,0.5); }
+  .currency-label { font-size:0.62rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+  .header-stats { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+  .stat-line { font-size:0.72rem; color:var(--text-muted); }
+  .stat-val { color:var(--accent-teal); }
+
+  /* PANELS */
+  #panel-left, #panel-right {
+    padding:16px;
+    border-right:1px solid var(--border-subtle);
+    overflow-y:auto;
+    max-height:calc(100vh - 56px);
+    scrollbar-width:thin;
+    scrollbar-color:var(--border-subtle) transparent;
+  }
+  #panel-right { border-right:none; border-left:1px solid var(--border-subtle); }
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-thumb { background:var(--border-subtle); border-radius:2px; }
+
+  .panel-title {
+    font-family:'Cinzel Decorative',serif;
+    font-size:0.6rem;
+    color:var(--text-muted);
+    text-transform:uppercase;
+    letter-spacing:3px;
+    margin-bottom:12px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--border-subtle);
+  }
+
+  /* UPGRADES */
+  .upgrade-item {
+    display:flex; align-items:center; gap:10px;
+    padding:10px; border-radius:8px;
+    border:1px solid var(--border-subtle);
+    margin-bottom:8px; cursor:pointer;
+    transition:var(--transition); background:var(--bg-card);
+    position:relative; overflow:hidden;
+  }
+  .upgrade-item.affordable { border-color:rgba(212,168,67,0.3); }
+  .upgrade-item.affordable:hover { border-color:var(--accent-gold); box-shadow:var(--glow-gold); transform:translateX(2px); }
+  .upgrade-icon { font-size:1.4rem; flex-shrink:0; }
+  .upgrade-info { flex:1; min-width:0; }
+  .upgrade-name { font-size:0.84rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .upgrade-desc { font-size:0.7rem; color:var(--text-muted); margin-top:2px; }
+  .upgrade-cost { font-size:0.76rem; font-weight:600; color:var(--accent-gold); white-space:nowrap; text-align:right; }
+  .upgrade-count { font-size:0.68rem; color:var(--text-muted); text-align:right; }
+
+  /* CENTER */
+  #panel-center {
+    grid-area:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px; gap:20px;
+  }
+  .egg-stage-label {
+    font-family:'Cinzel Decorative',serif; font-size:0.62rem;
+    color:var(--text-muted); text-transform:uppercase; letter-spacing:3px; text-align:center;
+  }
+  .egg-name {
+    font-family:'Cinzel Decorative',serif; font-size:1.3rem;
+    color:var(--accent-gold); text-shadow:var(--glow-gold); text-align:center; margin-top:4px;
+  }
+
+  /* EVO BAR */
+  .evo-bar-container { width:100%; max-width:340px; }
+  .evo-bar-labels { display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-muted); margin-bottom:6px; }
+  .evo-bar-track { height:8px; background:var(--bg-card); border-radius:4px; border:1px solid var(--border-subtle); overflow:hidden; }
+  .evo-bar-fill {
+    height:100%; border-radius:4px;
+    background:linear-gradient(90deg,var(--accent-ember),var(--accent-gold));
+    box-shadow:var(--glow-gold); transition:width 0.4s ease;
+    position:relative; overflow:hidden;
+  }
+  .evo-bar-fill::after {
+    content:''; position:absolute; top:0; left:-50%; width:30%; height:100%;
+    background:rgba(255,255,255,0.25); animation:shimmer 2s infinite;
+  }
+  @keyframes shimmer { to { left:150%; } }
+
+  /* EGG */
+  #egg-wrapper { position:relative; cursor:pointer; user-select:none; }
+  #egg {
+    width:200px; height:240px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:7.5rem;
+    border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    transition:transform 0.08s ease, filter 0.3s ease;
+    will-change:transform;
+  }
+  #egg:active { transform:scale(0.94); }
+  #egg.crack-anim { animation:crack 0.15s ease; }
+  @keyframes crack {
+    0%   { transform:scale(1) rotate(0deg); }
+    25%  { transform:scale(1.08) rotate(-3deg); }
+    75%  { transform:scale(1.05) rotate(3deg); }
+    100% { transform:scale(1) rotate(0deg); }
+  }
+  .egg-glow-ring {
+    position:absolute; inset:-20px;
+    border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    border:1px solid rgba(212,168,67,0.2);
+    animation:pulse-ring 2s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes pulse-ring { 0%,100%{transform:scale(1);opacity:.5} 50%{transform:scale(1.06);opacity:.2} }
+
+  /* EGG STAGES */
+  .egg-s0 { background:radial-gradient(ellipse at 40% 30%,#e8e0d0,#c4b89a); filter:drop-shadow(0 8px 24px rgba(196,184,154,.4)); }
+  .egg-s1 { background:radial-gradient(ellipse at 40% 30%,#ffe08a,#d4a843); filter:drop-shadow(0 8px 32px rgba(212,168,67,.5)); }
+  .egg-s2 { background:radial-gradient(ellipse at 40% 30%,#a0e8ff,#4ab8e0); filter:drop-shadow(0 8px 32px rgba(74,184,224,.5)); }
+  .egg-s3 { background:radial-gradient(ellipse at 40% 30%,#c4a0ff,#9b5de5); filter:drop-shadow(0 8px 32px rgba(155,93,229,.6)); }
+  .egg-s4 { background:radial-gradient(ellipse at 40% 30%,#ff9a6c,#e84a2f); filter:drop-shadow(0 8px 32px rgba(232,74,47,.6)); }
+  .egg-s5 { background:radial-gradient(ellipse at 40% 30%,#6cffb8,#2de8c8); filter:drop-shadow(0 8px 40px rgba(45,232,200,.7)); }
+  .egg-s6 { background:radial-gradient(ellipse at 40% 30%,#fff,#d4a843,#9b5de5); animation:rainbowEgg 3s linear infinite; }
+  @keyframes rainbowEgg {
+    0%   { filter:drop-shadow(0 8px 40px rgba(212,168,67,.8)) hue-rotate(0deg); }
+    100% { filter:drop-shadow(0 8px 40px rgba(212,168,67,.8)) hue-rotate(360deg); }
+  }
+
+  /* FLOATERS */
+  .floater {
+    position:fixed; font-size:1rem; font-weight:700;
+    color:var(--accent-gold-light); text-shadow:var(--glow-gold);
+    pointer-events:none; animation:floatUp 1.2s ease-out forwards; z-index:999;
+  }
+  @keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-80px) scale(.7)} }
+
+  /* POWER DISPLAY */
+  .click-power-display { display:flex; gap:12px; text-align:center; flex-wrap:wrap; justify-content:center; }
+  .power-item {
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding:10px 14px; border-radius:8px; background:var(--bg-card);
+    border:1px solid var(--border-subtle);
+  }
+  .power-value { font-size:1rem; font-weight:600; color:var(--accent-teal); text-shadow:var(--glow-teal); }
+  .power-label { font-size:0.62rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+
+  /* ACTIVE EFFECTS */
+  #active-effects { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; min-height:28px; }
+  .effect-badge {
+    display:flex; align-items:center; gap:5px;
+    padding:4px 10px; border-radius:20px;
+    font-size:0.72rem; border:1px solid;
+    animation:badgePulse 1s ease-in-out infinite alternate;
+  }
+  .effect-badge.frenzy { border-color:var(--accent-ember); color:var(--accent-ember); background:rgba(232,74,47,.1); }
+  .effect-badge.clone  { border-color:var(--accent-purple); color:var(--accent-purple); background:rgba(155,93,229,.1); }
+  .effect-badge.mult2  { border-color:var(--accent-teal); color:var(--accent-teal); background:rgba(45,232,200,.1); }
+  @keyframes badgePulse { from{opacity:.7} to{opacity:1} }
+  .frenzy-active #egg { animation:frenzyShake .08s infinite; }
+  @keyframes frenzyShake { 0%,100%{transform:rotate(-1.5deg)} 50%{transform:rotate(1.5deg)} }
+
+  /* PRESTIGE BTN */
+  #prestige-btn {
+    padding:10px 28px; border-radius:8px; background:transparent;
+    border:1px solid var(--accent-purple); color:var(--accent-purple);
+    font-family:'Cinzel Decorative',serif; font-size:0.62rem;
+    letter-spacing:2px; cursor:pointer; transition:var(--transition); text-transform:uppercase;
+  }
+  #prestige-btn:hover:not(:disabled) { background:rgba(155,93,229,.15); box-shadow:0 0 20px rgba(155,93,229,.3); transform:translateY(-1px); }
+  #prestige-btn:disabled { opacity:.3; cursor:not-allowed; }
+
+  /* PRESTIGE INFO BOX */
+  .prestige-info {
+    padding:12px; border-radius:8px;
+    background:linear-gradient(135deg,rgba(155,93,229,.08),rgba(232,74,47,.05));
+    border:1px solid rgba(155,93,229,.2); margin-bottom:12px; text-align:center;
+  }
+  .fragment-count { font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:var(--accent-purple); text-shadow:0 0 20px rgba(155,93,229,.5); }
+  .fragment-label { font-size:0.66rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+  .prestige-bonus { font-size:0.73rem; color:var(--accent-teal); margin-top:6px; }
+
+  /* SHOP */
+  .shop-item {
+    display:flex; flex-direction:column; gap:6px;
+    padding:12px; border-radius:8px;
+    border:1px solid var(--border-subtle); margin-bottom:10px;
+    cursor:pointer; transition:var(--transition); background:var(--bg-card);
+    position:relative; overflow:hidden;
+  }
+  .shop-item::before {
+    content:''; position:absolute; top:0; left:0;
+    width:3px; height:100%; background:var(--accent-diamond); opacity:0; transition:var(--transition);
+  }
+  .shop-item.affordable { border-color:rgba(137,212,245,.3); }
+  .shop-item.affordable:hover { border-color:var(--accent-diamond); box-shadow:0 0 20px rgba(137,212,245,.2); transform:translateX(-2px); }
+  .shop-item.affordable:hover::before { opacity:1; }
+  .shop-item.active-effect { border-color:var(--accent-ember); box-shadow:0 0 15px rgba(232,74,47,.2); }
+  .shop-item.owned-perm { opacity:.4; cursor:default; }
+  .shop-header { display:flex; align-items:center; gap:8px; }
+  .shop-icon { font-size:1.2rem; }
+  .shop-name { font-size:0.88rem; font-weight:600; flex:1; }
+  .shop-cost { font-size:0.78rem; font-weight:600; color:var(--accent-diamond); }
+  .shop-desc { font-size:0.7rem; color:var(--text-muted); font-style:italic; line-height:1.4; }
+  .shop-timer { font-size:0.68rem; color:var(--accent-ember); font-weight:600; }
+
+  /* NOTIFICATIONS */
+  #notifications { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; gap:8px; z-index:1000; pointer-events:none; }
+  .notif { padding:10px 20px; border-radius:8px; font-size:0.84rem; font-weight:600; animation:nIn .3s ease,nOut .3s ease 2.7s forwards; text-align:center; white-space:nowrap; }
+  .notif.gold    { background:rgba(212,168,67,.12); border:1px solid var(--accent-gold); color:var(--accent-gold-light); }
+  .notif.diamond { background:rgba(137,212,245,.08); border:1px solid var(--accent-diamond); color:var(--accent-diamond); }
+  .notif.prestige{ background:rgba(155,93,229,.12); border:1px solid var(--accent-purple); color:var(--accent-purple); }
+  .notif.evo     { background:rgba(45,232,200,.08); border:1px solid var(--accent-teal); color:var(--accent-teal); }
+  @keyframes nIn  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes nOut { to{opacity:0;transform:translateY(-10px)} }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.8); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:200; animation:fadeIn .2s ease; }
+  @keyframes fadeIn { from{opacity:0} }
+  .modal { background:var(--bg-panel); border:1px solid var(--accent-purple); border-radius:16px; padding:32px; max-width:420px; width:90%; text-align:center; box-shadow:0 0 60px rgba(155,93,229,.3); }
+  .modal h2 { font-family:'Cinzel Decorative',serif; color:var(--accent-purple); margin-bottom:12px; font-size:1.2rem; }
+  .modal p  { color:var(--text-muted); font-size:0.88rem; line-height:1.6; margin-bottom:8px; }
+  .modal p strong { color:var(--accent-gold); }
+  .modal-buttons { display:flex; gap:12px; margin-top:24px; justify-content:center; }
+  .btn { padding:10px 24px; border-radius:8px; font-family:'Cinzel Decorative',serif; font-size:0.6rem; letter-spacing:1.5px; cursor:pointer; transition:var(--transition); border:1px solid; text-transform:uppercase; }
+  .btn-confirm { background:rgba(155,93,229,.15); border-color:var(--accent-purple); color:var(--accent-purple); }
+  .btn-confirm:hover { background:rgba(155,93,229,.3); box-shadow:0 0 20px rgba(155,93,229,.3); }
+  .btn-cancel  { background:transparent; border-color:var(--text-dim); color:var(--text-muted); }
+  .btn-cancel:hover  { border-color:var(--text-muted); }
+
+  /* FOOTER */
+  #footer { grid-area:footer; padding:10px 24px; border-top:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:space-between; font-size:0.68rem; color:var(--text-dim); }
+
+  /* RESPONSIVE */
+  @media(max-width:900px){
+    #app { grid-template-columns:1fr; grid-template-areas:"header""center""left""right""footer"; }
+    #panel-left,#panel-right { max-height:none; border:none; border-top:1px solid var(--border-subtle); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="header">
+    <h1>🐉 Egg Ascension</h1>
+    <div class="currency-display">
+      <div class="currency-item">
+        <div class="currency-value" id="hdr-coins">0</div>
+        <div class="currency-label">🪙 Moedas</div>
+      </div>
+      <div class="currency-item">
+        <div class="currency-value diamond" id="hdr-diamonds">0</div>
+        <div class="currency-label">💎 Diamantes</div>
+      </div>
+      <div class="currency-item">
+        <div class="currency-value frag" id="hdr-fragments">0</div>
+        <div class="currency-label">🔮 Fragmentos</div>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-line">Por segundo: <span class="stat-val" id="stat-cps">0</span></div>
+      <div class="stat-line">Cliques: <span class="stat-val" id="stat-clicks">0</span></div>
+    </div>
+  </header>
+
+  <!-- LEFT: UPGRADES -->
+  <aside id="panel-left">
+    <div class="panel-title">⚗️ Melhorias</div>
+    <div id="upgrades-list"></div>
+  </aside>
+
+  <!-- CENTER -->
+  <main id="panel-center">
+    <div>
+      <div class="egg-stage-label">Estágio de Evolução</div>
+      <div class="egg-name" id="egg-name">Ovo Primitivo</div>
+    </div>
+
+    <div class="evo-bar-container">
+      <div class="evo-bar-labels">
+        <span id="evo-current">0</span>
+        <span id="evo-label">Próxima evolução</span>
+        <span id="evo-target">1K</span>
+      </div>
+      <div class="evo-bar-track">
+        <div class="evo-bar-fill" id="evo-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div id="active-effects"></div>
+
+    <div id="egg-wrapper">
+      <div class="egg-glow-ring"></div>
+      <div id="egg" class="egg-s0">🥚</div>
+    </div>
+
+    <div class="click-power-display">
+      <div class="power-item">
+        <div class="power-value" id="click-power">+1</div>
+        <div class="power-label">Por Clique</div>
+      </div>
+      <div class="power-item">
+        <div class="power-value" id="passive-power">+0</div>
+        <div class="power-label">Por Segundo</div>
+      </div>
+      <div class="power-item">
+        <div class="power-value" id="multiplier-display">×1.0</div>
+        <div class="power-label">Multiplicador</div>
+      </div>
+    </div>
+
+    <button id="prestige-btn" disabled onclick="openPrestigeModal()">✦ Ascensão ✦</button>
+  </main>
+
+  <!-- RIGHT: SHOP -->
+  <aside id="panel-right">
+    <div class="prestige-info">
+      <div class="fragment-count" id="frag-count">🔮 0</div>
+      <div class="fragment-label">Fragmentos de Dragão</div>
+      <div class="prestige-bonus" id="prestige-bonus-txt">Bônus permanente: +0%</div>
+    </div>
+    <div class="panel-title">💎 Loja Mágica</div>
+    <div id="shop-list"></div>
+  </aside>
+
+  <footer id="footer">
+    <span>Egg Ascension v1.0</span>
+    <span id="save-indicator" style="color:var(--accent-teal)">● Aguardando...</span>
+  </footer>
+</div>
+
+<div id="notifications"></div>
+
+<script>
+/* ============================================================
+   DATA DEFINITIONS
+============================================================ */
+const EGG_STAGES = [
+  { name:"Ovo Primitivo",   cls:"egg-s0", emoji:"🥚", threshold:0n,               mult:1.0   },
+  { name:"Ovo Dourado",     cls:"egg-s1", emoji:"✨", threshold:1_000n,            mult:1.5   },
+  { name:"Ovo Cristalino",  cls:"egg-s2", emoji:"💠", threshold:100_000n,          mult:2.5   },
+  { name:"Ovo Arcano",      cls:"egg-s3", emoji:"🔮", threshold:10_000_000n,       mult:5.0   },
+  { name:"Ovo Infernal",    cls:"egg-s4", emoji:"🔥", threshold:1_000_000_000n,    mult:10.0  },
+  { name:"Ovo Celestial",   cls:"egg-s5", emoji:"🌟", threshold:100_000_000_000n,  mult:25.0  },
+  { name:"Ovo do Dragão",   cls:"egg-s6", emoji:"🐉", threshold:10_000_000_000_000n, mult:100.0},
+];
+
+const UPGRADES = [
+  { id:"u0", name:"Galinha Veloz",    icon:"🐔", desc:"Cada compra: +5/clique",      baseCost:10n,         costMult:1.15, type:"click",   value:5    },
+  { id:"u1", name:"Ninho Mágico",     icon:"🪺", desc:"Cada compra: +3/segundo",     baseCost:50n,         costMult:1.15, type:"passive", value:3    },
+  { id:"u2", name:"Pena de Fênix",    icon:"🪶", desc:"Cada compra: +20/clique",     baseCost:200n,        costMult:1.15, type:"click",   value:20   },
+  { id:"u3", name:"Fazenda Élfica",   icon:"🌿", desc:"Cada compra: +15/segundo",    baseCost:500n,        costMult:1.15, type:"passive", value:15   },
+  { id:"u4", name:"Ovo Solar",        icon:"☀️", desc:"Cada compra: +100/clique",    baseCost:2_000n,      costMult:1.15, type:"click",   value:100  },
+  { id:"u5", name:"Dragão Bebê",      icon:"🐣", desc:"Cada compra: +50/segundo",    baseCost:5_000n,      costMult:1.15, type:"passive", value:50   },
+  { id:"u6", name:"Portal Arcano",    icon:"🌀", desc:"Cada compra: +500/segundo",   baseCost:50_000n,     costMult:1.15, type:"passive", value:500  },
+  { id:"u7", name:"Trono de Dragão",  icon:"👑", desc:"Cada compra: +2000/clique",   baseCost:200_000n,    costMult:1.15, type:"click",   value:2000 },
+  { id:"u8", name:"Universo Ovo",     icon:"🌌", desc:"Cada compra: +5000/segundo",  baseCost:2_000_000n,  costMult:1.15, type:"passive", value:5000 },
+];
+
+const SHOP = [
+  { id:"s0", name:"Frenesi de Cliques", icon:"⚡", desc:"×10 nos cliques por 30 segundos",       cost:5,  type:"temp",    duration:60,  effect:"frenzy"    },
+  { id:"s1", name:"Clonagem de Ovo",    icon:"🪄", desc:"×5 na produção passiva por 60 segundos", cost:8,  type:"temp",    duration:120, effect:"clone"     },
+  { id:"s2", name:"Chuva de Diamantes", icon:"💠", desc:"+20 Diamantes instantaneamente",          cost:15, type:"instant", effect:"diamonds", value:20       },
+  { id:"s3", name:"Duplo Poder",        icon:"🌠", desc:"Dobra TODOS os ganhos por 120 segundos", cost:20, type:"temp",    duration:120, effect:"mult2"     },
+  { id:"s4", name:"Bênção do Dragão",   icon:"🔮", desc:"Duplica ganho de Fragmentos (permanente)",cost:50, type:"perm",   effect:"fragBonus"                },
+];
+
+/* ============================================================
+   STATE
+============================================================ */
+let state = {
+  coins:           0n,
+  diamonds:        0n,
+  dragonFragments: 0n,
+  totalClicks:     0,
+  totalCoinsEarned:0n,
+  runCoins:        0n,
+  eggStage:        0,
+  upgradeCount:    {},
+  shopOwned:       {},
+  activeEffects:   {},
+  prestigeCount:   0,
+  fragBonusDouble: false,
+};
+
+/* ============================================================
+   NUMBER FORMATTING  (BigInt safe)
+============================================================ */
+const TIERS = [
+  [1e33,"De"],[1e30,"No"],[1e27,"Oc"],[1e24,"Sp"],[1e21,"Sx"],
+  [1e18,"Qi"],[1e15,"Qa"],[1e12,"T"],[1e9,"B"],[1e6,"M"],[1e3,"K"]
+];
+function fmt(n) {
+  const num = typeof n === "bigint" ? Number(n) : n;
+  if (!isFinite(num) || num < 1000) return Math.floor(num || 0).toString();
+  for (const [v, s] of TIERS) {
+    if (num >= v) {
+      const val = num / v;
+      return (val >= 100 ? Math.floor(val) : val.toFixed(val >= 10 ? 1 : 2).replace(/\.?0+$/,"")) + s;
+    }
+  }
+  return Math.floor(num).toString();
+}
+
+/* ============================================================
+   CALCULATIONS
+============================================================ */
+function getPrestigeBonus() {
+  return 1 + Number(state.dragonFragments) * 0.02;
+}
+
+function getEggMult() {
+  return EGG_STAGES[state.eggStage].mult;
+}
+
+function getEffectMult() {
+  let m = 1;
+  if (state.activeEffects.mult2) m *= 2;
+  return m;
+}
+
+function getClickPower() {
+  let base = 1;
+  UPGRADES.filter(u => u.type === "click").forEach(u => {
+    base += (state.upgradeCount[u.id] || 0) * u.value;
+  });
+  let power = base * getEggMult() * getPrestigeBonus() * getEffectMult();
+  if (state.activeEffects.frenzy) power *= 10;
+  return Math.ceil(power);
+}
+
+function getPassivePower() {
+  let base = 0;
+  UPGRADES.filter(u => u.type === "passive").forEach(u => {
+    base += (state.upgradeCount[u.id] || 0) * u.value;
+  });
+  let power = base * getEggMult() * getPrestigeBonus() * getEffectMult();
+  if (state.activeEffects.clone) power *= 5;
+  return Math.ceil(power);
+}
+
+function getUpgradeCost(u) {
+  const c = state.upgradeCount[u.id] || 0;
+  return BigInt(Math.ceil(Number(u.baseCost) * Math.pow(u.costMult, c)));
+}
+
+function getFragmentsForPrestige() {
+  const base = BigInt(Math.max(1, Math.floor(Math.sqrt(Number(state.runCoins) / 1000))));
+  return state.fragBonusDouble ? base * 2n : base;
+}
+
+/* ============================================================
+   GAME LOOP
+============================================================ */
+let lastTick = Date.now();
+let saveTimer = 0;
+let effectTimer = 0;
+let diamondTimer = 0;
+
+function gameTick() {
+  const now = Date.now();
+  const dt = (now - lastTick) / 1000;
+  lastTick = now;
+
+  // Passive income — accumulate fractional amounts properly
+  const passive = getPassivePower();
+  if (passive > 0) {
+    const gain = BigInt(Math.floor(passive * dt));
+    if (gain > 0n) addCoins(gain);
+  }
+
+  // Tick effects
+  effectTimer += dt;
+  if (effectTimer >= 1) {
+    effectTimer = 0;
+    let changed = false;
+    for (const key of Object.keys(state.activeEffects)) {
+      const e = state.activeEffects[key];
+      if (e.endsAt && Date.now() >= e.endsAt) {
+        delete state.activeEffects[key];
+        if (key === "frenzy") document.getElementById("app").classList.remove("frenzy-active");
+        showNotif(`Efeito encerrado!`, "gold");
+        changed = true;
+      }
+    }
+    if (changed) renderEffects();
+  }
+
+  // Random diamond
+  diamondTimer += dt;
+  if (diamondTimer >= 60) {
+    diamondTimer = 0;
+    if (Math.random() < 0.3) {
+      state.diamonds += 1n;
+      showNotif("💎 +1 Diamante!", "diamond");
+    }
+  }
+
+  saveTimer += dt;
+  if (saveTimer >= 5) { saveTimer = 0; saveGame(); }
+
+  updateUI();
+}
+
+function addCoins(amount) {
+  state.coins += amount;
+  state.runCoins += amount;
+  state.totalCoinsEarned += amount;
+  checkEvolution();
+}
+
+function checkEvolution() {
+  for (let i = EGG_STAGES.length - 1; i >= 0; i--) {
+    if (state.totalCoinsEarned >= EGG_STAGES[i].threshold) {
+      if (state.eggStage !== i) {
+        state.eggStage = i;
+        renderEgg();
+        showNotif(`✨ Evolução! ${EGG_STAGES[i].name}!`, "evo");
+      }
+      break;
+    }
+  }
+}
+
+/* ============================================================
+   INPUT — EGG CLICK
+============================================================ */
+document.getElementById("egg-wrapper").addEventListener("click", function(e) {
+  const power = BigInt(getClickPower());
+  addCoins(power);
+  state.totalClicks++;
+
+  const floater = document.createElement("div");
+  floater.className = "floater";
+  floater.textContent = `+${fmt(power)}`;
+  floater.style.left = (e.clientX - 20) + "px";
+  floater.style.top  = (e.clientY - 20) + "px";
+  document.body.appendChild(floater);
+  setTimeout(() => floater.remove(), 1200);
+
+  const egg = document.getElementById("egg");
+  egg.classList.remove("crack-anim");
+  void egg.offsetWidth;
+  egg.classList.add("crack-anim");
+});
+
+/* ============================================================
+   BUY UPGRADE
+============================================================ */
+function buyUpgrade(id) {
+  const u = UPGRADES.find(x => x.id === id);
+  if (!u) return;
+  const cost = getUpgradeCost(u);
+  if (state.coins < cost) { showNotif("Moedas insuficientes!", "gold"); return; }
+  state.coins -= cost;
+  state.upgradeCount[u.id] = (state.upgradeCount[u.id] || 0) + 1;
+  showNotif(`${u.icon} ${u.name} melhorado!`, "gold");
+}
+
+/* ============================================================
+   BUY SHOP ITEM
+============================================================ */
+function buyShopItem(id) {
+  const item = SHOP.find(s => s.id === id);
+  if (!item) return;
+  if (state.diamonds < BigInt(item.cost)) { showNotif("Diamantes insuficientes!", "diamond"); return; }
+  if (item.type === "perm" && state.shopOwned[id]) { showNotif("Já adquirido!", "diamond"); return; }
+
+  state.diamonds -= BigInt(item.cost);
+
+  if (item.type === "temp") {
+    state.activeEffects[item.effect] = { endsAt: Date.now() + item.duration * 1000 };
+    showNotif(`✨ ${item.name} ativado!`, "diamond");
+    if (item.effect === "frenzy") document.getElementById("app").classList.add("frenzy-active");
+    renderEffects();
+  } else if (item.type === "instant" && item.effect === "diamonds") {
+    state.diamonds += BigInt(item.value);
+    showNotif(`💎 +${item.value} Diamantes!`, "diamond");
+  } else if (item.type === "perm") {
+    state.shopOwned[id] = true;
+    if (item.effect === "fragBonus") {
+      state.fragBonusDouble = true;
+      showNotif("🔮 Bênção do Dragão adquirida!", "prestige");
+    }
+  }
+}
+
+/* ============================================================
+   PRESTIGE
+============================================================ */
+function openPrestigeModal() {
+  const frags = getFragmentsForPrestige();
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>✦ Ascensão ✦</h2>
+      <p>Você irá <strong>resetar</strong> moedas, melhorias e estágio do ovo.</p>
+      <p style="margin:12px 0;font-size:1.3rem;color:var(--accent-purple);font-family:'Cinzel Decorative',serif">
+        🔮 +${fmt(frags)} Fragmentos
+      </p>
+      <p>Cada fragmento concede <strong>+2%</strong> de bônus permanente.</p>
+      <p style="font-size:0.78rem;color:var(--text-dim);margin-top:8px">
+        Diamantes e fragmentos já acumulados são mantidos.
+      </p>
+      <div class="modal-buttons">
+        <button class="btn btn-confirm" id="modal-confirm">Ascender</button>
+        <button class="btn btn-cancel" id="modal-cancel">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById("modal-confirm").onclick = () => { overlay.remove(); doPrestige(frags); };
+  document.getElementById("modal-cancel").onclick  = () => overlay.remove();
+}
+
+function doPrestige(frags) {
+  state.dragonFragments += frags;
+  state.prestigeCount++;
+  state.coins = 0n;
+  state.runCoins = 0n;
+  state.totalCoinsEarned = 0n;
+  state.eggStage = 0;
+  state.upgradeCount = {};
+  state.activeEffects = {};
+  document.getElementById("app").classList.remove("frenzy-active");
+  renderAll();
+  showNotif(`🔮 Ascensão! +${fmt(frags)} fragmentos!`, "prestige");
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function renderAll() {
+  renderEgg();
+  renderUpgrades();
+  renderShop();
+  renderEffects();
+  updateUI();
+}
+
+function renderEgg() {
+  const stage = EGG_STAGES[state.eggStage];
+  const egg = document.getElementById("egg");
+  EGG_STAGES.forEach((s, i) => egg.classList.toggle(s.cls, i === state.eggStage));
+  egg.textContent = stage.emoji;
+  document.getElementById("egg-name").textContent = stage.name;
+}
+
+function renderUpgrades() {
+  document.getElementById("upgrades-list").innerHTML = UPGRADES.map(u => {
+    const cost = getUpgradeCost(u);
+    const can  = state.coins >= cost;
+    const cnt  = state.upgradeCount[u.id] || 0;
+    return `<div class="upgrade-item${can?' affordable':''}" onclick="buyUpgrade('${u.id}')">
+      <div class="upgrade-icon">${u.icon}</div>
+      <div class="upgrade-info">
+        <div class="upgrade-name">${u.name}</div>
+        <div class="upgrade-desc">${u.desc}</div>
+      </div>
+      <div>
+        <div class="upgrade-cost">${fmt(cost)}🪙</div>
+        <div class="upgrade-count">×${cnt}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderShop() {
+  document.getElementById("shop-list").innerHTML = SHOP.map(s => {
+    const can      = state.diamonds >= BigInt(s.cost);
+    const owned    = s.type === "perm" && state.shopOwned[s.id];
+    const active   = state.activeEffects[s.effect];
+    let timerHtml  = "";
+    if (active && active.endsAt) {
+      const rem = Math.max(0, Math.ceil((active.endsAt - Date.now()) / 1000));
+      timerHtml = `<div class="shop-timer">⏱ ${rem}s restantes</div>`;
+    }
+    const cls = owned ? "owned-perm" : (can ? "affordable" : "") + (active ? " active-effect" : "");
+    return `<div class="shop-item ${cls}" onclick="${owned ? '' : `buyShopItem('${s.id}')`}">
+      <div class="shop-header">
+        <div class="shop-icon">${s.icon}</div>
+        <div class="shop-name">${s.name}</div>
+        <div class="shop-cost">${owned ? '✔ Adquirido' : '💎' + s.cost}</div>
+      </div>
+      <div class="shop-desc">${s.desc}</div>
+      ${timerHtml}
+    </div>`;
+  }).join("");
+}
+
+function renderEffects() {
+  const LABELS = { frenzy:"⚡ Frenesi", clone:"🪄 Clone", mult2:"🌠 ×2 Tudo" };
+  const TYPES  = { frenzy:"frenzy", clone:"clone", mult2:"mult2" };
+  document.getElementById("active-effects").innerHTML =
+    Object.entries(state.activeEffects).map(([key, e]) => {
+      const rem = e.endsAt ? Math.max(0, Math.ceil((e.endsAt - Date.now()) / 1000)) : null;
+      return `<div class="effect-badge ${TYPES[key]||'clone'}">${LABELS[key]||key}${rem !== null ? ` ${rem}s` : ""}</div>`;
+    }).join("");
+}
+
+function updateUI() {
+  // Header
+  document.getElementById("hdr-coins").textContent     = fmt(state.coins);
+  document.getElementById("hdr-diamonds").textContent  = fmt(state.diamonds);
+  document.getElementById("hdr-fragments").textContent = fmt(state.dragonFragments);
+  document.getElementById("stat-clicks").textContent   = fmt(state.totalClicks);
+  document.getElementById("stat-cps").textContent      = fmt(getPassivePower());
+  document.getElementById("frag-count").textContent    = "🔮 " + fmt(state.dragonFragments);
+  const bonusPct = ((getPrestigeBonus() - 1) * 100).toFixed(0);
+  document.getElementById("prestige-bonus-txt").textContent = `Bônus permanente: +${bonusPct}%`;
+
+  // Evo bar
+  const stage = EGG_STAGES[state.eggStage];
+  const next  = EGG_STAGES[state.eggStage + 1];
+  if (next) {
+    const from = stage.threshold, to = next.threshold, curr = state.totalCoinsEarned;
+    const pct  = to > from ? Number(((curr - from) * 10000n) / (to - from)) / 100 : 100;
+    document.getElementById("evo-bar").style.width = Math.min(100, Math.max(0, pct)) + "%";
+    document.getElementById("evo-current").textContent = fmt(curr);
+    document.getElementById("evo-target").textContent  = fmt(to);
+    document.getElementById("evo-label").textContent   = `→ ${next.name}`;
+  } else {
+    document.getElementById("evo-bar").style.width = "100%";
+    document.getElementById("evo-label").textContent   = "✦ Máximo ✦";
+    document.getElementById("evo-current").textContent = "";
+    document.getElementById("evo-target").textContent  = "";
+  }
+
+  // Powers
+  document.getElementById("click-power").textContent      = "+" + fmt(getClickPower());
+  document.getElementById("passive-power").textContent    = "+" + fmt(getPassivePower());
+  const totalMult = (getEggMult() * getPrestigeBonus()).toFixed(1);
+  document.getElementById("multiplier-display").textContent = "×" + totalMult;
+
+  // Prestige button
+  document.getElementById("prestige-btn").disabled = state.totalCoinsEarned < 1000n;
+
+  // Re-render dynamic parts
+  renderUpgrades();
+  renderShop();
+  renderEffects();
+}
+
+/* ============================================================
+   NOTIFICATIONS
+============================================================ */
+function showNotif(text, type = "gold") {
+  const el = document.createElement("div");
+  el.className = `notif ${type}`;
+  el.textContent = text;
+  const container = document.getElementById("notifications");
+  container.appendChild(el);
+  // Keep max 3 notifications
+  while (container.children.length > 3) container.removeChild(container.firstChild);
+  setTimeout(() => el.remove(), 3000);
+}
+
+/* ============================================================
+   SAVE / LOAD
+============================================================ */
+function saveGame() {
+  try {
+    const data = {
+      coins:            state.coins.toString(),
+      diamonds:         state.diamonds.toString(),
+      dragonFragments:  state.dragonFragments.toString(),
+      totalClicks:      state.totalClicks,
+      totalCoinsEarned: state.totalCoinsEarned.toString(),
+      runCoins:         state.runCoins.toString(),
+      eggStage:         state.eggStage,
+      upgradeCount:     state.upgradeCount,
+      shopOwned:        state.shopOwned,
+      prestigeCount:    state.prestigeCount,
+      fragBonusDouble:  state.fragBonusDouble,
+      savedAt:          Date.now(),
+    };
+    localStorage.setItem("eggAscension_v1", JSON.stringify(data));
+    const t = new Date().toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" });
+    document.getElementById("save-indicator").textContent = `● Salvo às ${t}`;
+  } catch(err) { console.warn("Save failed", err); }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem("eggAscension_v1");
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    state.coins            = BigInt(d.coins || "0");
+    state.diamonds         = BigInt(d.diamonds || "0");
+    state.dragonFragments  = BigInt(d.dragonFragments || "0");
+    state.totalClicks      = d.totalClicks || 0;
+    state.totalCoinsEarned = BigInt(d.totalCoinsEarned || "0");
+    state.runCoins         = BigInt(d.runCoins || "0");
+    state.eggStage         = d.eggStage || 0;
+    state.upgradeCount     = d.upgradeCount || {};
+    state.shopOwned        = d.shopOwned || {};
+    state.prestigeCount    = d.prestigeCount || 0;
+    state.fragBonusDouble  = d.fragBonusDouble || false;
+
+    // Offline earnings (50% efficiency, max 8h)
+    if (d.savedAt) {
+      const offlineSec = Math.min((Date.now() - d.savedAt) / 1000, 28800);
+      if (offlineSec > 15) {
+        const passive = getPassivePower();
+        if (passive > 0) {
+          const gain = BigInt(Math.floor(passive * offlineSec * 0.5));
+          if (gain > 0n) {
+            addCoins(gain);
+            showNotif(`⏰ Ganhos offline: +${fmt(gain)} moedas!`, "evo");
+          }
+        }
+      }
+    }
+  } catch(err) { console.warn("Load failed", err); }
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+loadGame();
+renderAll();
+setInterval(gameTick, 100);
+</script>
+</body>
+</html>
