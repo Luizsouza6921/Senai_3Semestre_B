@@ -22,7 +22,12 @@ const Aula14 = () => {
             <button onClick={() => navigate('/perfil/Luiz')}>Perfil do Luiz</button>
             <button onClick={() => navigate('/perfil/Diogo')}>Perfil do Diogo</button>
             
-    
+            <hr />
+            <button onClick={() => navigate('/detalhes')}>Ir para detalhes</button>
+            <hr />
+            <hr />
+            <button onClick={() => navigate('/filme/Harry Potter')}>Filme Harry Potter</button>
+            <button onClick={() => navigate('/filme/Star Wars')}>Filme Star Wars</button>
 
         </div>
     )
