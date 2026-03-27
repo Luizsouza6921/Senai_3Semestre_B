@@ -66,7 +66,7 @@ const Aula13_CRUD_Usuarios = () => {
     //Função para buscar os dados de uma API
     async function buscarDados() {
         try {
-            const resposta = await fetch('http://10.130.42.68:3001/usuarios')
+            const resposta = await fetch(`${enderecoServidor}/usuarios`)
             const dados = await resposta.json()
             setListaUsuarios(dados)
 

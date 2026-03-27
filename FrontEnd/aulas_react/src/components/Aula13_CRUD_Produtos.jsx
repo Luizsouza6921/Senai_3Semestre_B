@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import Aula13_Produto from "./Aula13_Produto"
+import { enderecoServidor } from "./Aula07_Multicomponentes"
 
 const Aula13_CRUD_Produtos = () => {
     const [listaProdutos, setListaProdutos] = useState([])
@@ -104,7 +105,7 @@ const Aula13_CRUD_Produtos = () => {
     //Função para buscar os dados de uma API
     async function buscarDados() {
         try {
-            const resposta = await fetch('http://10.130.42.68:3001/produtos')
+            const resposta = await fetch(`${enderecoServidor}/produtos`)
             const dados = await resposta.json()
             setListaProdutos(dados)
 
