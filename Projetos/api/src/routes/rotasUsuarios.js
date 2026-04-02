@@ -112,12 +112,8 @@ router.delete('/usuarios/:id_usuario', async (req, res) => {
         if (verificarUsuario.rows.length === 0) {
             return res.status(400).json("Usuário não encontrado");
         }
-        // Image check: table name 'usuarios' was confirmed, 'ordem_servicos' was in previous code
-        const verificarOrdem = await BD.query(`SELECT * FROM ordem_servicos WHERE id_usuario = $1`, [id_usuario]);
-        if (verificarOrdem.rows.length > 0) {
-            return res.status(400).json("Não é possível deletar. O usuário possui ordens de serviço vinculadas.");
-        }
-        const comando = `DELETE FROM usuarios WHERE id_usuario = $1`;
+        
+        const comando = `UPDATE usuarios SET ativo = false WHERE id_usuario = $1`;
         await BD.query(comando, [id_usuario]);
         res.status(200).json("Usuário deletado com sucesso");
     } catch (error) {
