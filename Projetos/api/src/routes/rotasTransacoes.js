@@ -3,218 +3,252 @@ import { BD } from "../../db.js";
 
 const router = Router();
 
-
-// 📌 GET
+//Criando o endpoint para listar todos os usuarios
 router.get('/transacoes', async (req, res) => {
     try {
-        const resultado = await BD.query(`SELECT * FROM transacoes`);
-        res.status(200).json(resultado.rows);
+        //cria uma variavel para enviar o comando sql
+        const query = `SELECT t.id_transacao,
+        t.valor,
+        t.descricao,
+        TO_CHAR(t.data_registro,'DD/MM/YYY') AS data_registro,
+        TO_CHAR(t.data_vencimento,'DD/MM/YYY') AS data_vencimento,
+        TO_CHAR(t.data_pagamento,'DD/MM/YYY') AS data_pagamento,
+        t.tipo,
+        c.nome AS nome_categoria,
+        s.nome AS nome_subcategoria
+        FROM transacoes t
+        LEFT JOIN categorias c ON t.id_categoria = c.id_categoria
+        LEFT JOIN subcategorias s ON t.id_subcategoria = s.id_subcategoria
+        `
+
+        //cria uma variavel para receber o retorno do sql
+        const transacoes = await BD.query(query);
+
+        //retorno para a pagina, o json com os dados
+        //buscados do sql
+        return res.status(200).json(transacoes.rows);//200 ok
     } catch (error) {
-        console.error('Erro ao listar transações:', error);
-        res.status(500).json("Erro interno no servidor");
+        console.error('Erro ao listar transacoes', error.message);
+        return res.status(500).json({ error: 'Erro ao listar transacoes' })
     }
-});
+})
 
-
-// 📌 POST
+//Endpoint seguro contra sql Injection
 router.post('/transacoes', async (req, res) => {
-    const {
-        valor,
-        descricao,
-        data_pagamento,
-        data_vencimento,
-        tipo,
-        id_categoria,
-        id_subcategoria
-    } = req.body;
-
-    const client = await BD.connect();
-
+    const { valor, descricao, data_vencimento, data_pagamento, tipo, id_subcategoria, id_categoria } = req.body;
     try {
-        await client.query('BEGIN');
+        const comando = `INSERT INTO TRANSACOES(valor, descricao, data_vencimento, data_pagamento, tipo, id_subcategoria, id_categoria) VALUES($1, $2, $3, $4, $5, $6, $7)`
+        const valores = [valor, descricao, data_vencimento, data_pagamento, tipo, id_subcategoria, id_categoria];
 
-        const resultado = await client.query(`
-            INSERT INTO transacoes 
-            (valor, descricao, data_registro, data_pagamento, data_vencimento, tipo, id_categoria, id_subcategoria)
-            VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7)
-            RETURNING *
-        `, [
-            valor,
-            descricao,
-            data_pagamento,
-            data_vencimento,
-            tipo,
-            id_categoria,
-            id_subcategoria
-        ]);
+        await BD.query(comando, valores)
+        console.log(comando, valores);
 
-        await client.query('COMMIT');
-
-        res.status(201).json(resultado.rows[0]);
-
+        return res.status(201).json("Transação cadastrada.");
     } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Erro ao criar transação:', error);
-        res.status(500).json("Erro interno no servidor");
-    } finally {
-        client.release();
+        console.error('Erro ao cadastrar transacoes', error.message);
+        return res.status(500).json({ error: 'Erro ao cadastrar transacoes' + error.message})
     }
-});
+})
 
-
-// 📌 PUT
+// endpoint para atualizar um unico usuário
+// recebendo o parametro pelo id e buscando o usuario
 router.put('/transacoes/:id_transacao', async (req, res) => {
+    // Id recebido via parametro
     const { id_transacao } = req.params;
 
-    const {
-        valor,
-        descricao,
-        data_pagamento,
-        data_vencimento,
-        tipo,
-        id_categoria,
-        id_subcategoria
-    } = req.body;
-
-    const client = await BD.connect();
-
+    // Dados da transacao recebido via Corpo da página
+    const { valor, descricao, data_vencimento, data_pagamento, tipo, id_subcategoria, id_categoria } = req.body;
     try {
-        await client.query('BEGIN');
-
-        const verificar = await client.query(
-            `SELECT * FROM transacoes WHERE id_transacao = $1`,
-            [id_transacao]
-        );
-
-        if (verificar.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(404).json("Transação não encontrada");
+        //Verificar se a transacao existe
+        const verificarTransacao = await BD.query(`SELECT * FROM TRANSACOES
+            WHERE id_transacao = $1`, [id_transacao])
+        if (verificarTransacao.rows.length === 0) {
+            return res.status(404).json({ message: 'Transação não encontrada' })
         }
+        // Atualiza todos os campos da tabela(PUT Substituição completa)
+        const comando = `UPDATE TRANSACOES SET valor = $1, descricao = $2, data_vencimento = $3, data_pagamento = $4, tipo = $5, id_subcategoria = $6, id_categoria = $7 WHERE
+        id_transacao = $8`;
+        const valores = [valor, descricao, data_vencimento, data_pagamento, tipo, id_subcategoria, id_categoria, id_transacao];
+        await BD.query(comando, valores);
 
-        const resultado = await client.query(`
-            UPDATE transacoes SET
-                valor = $1,
-                descricao = $2,
-                data_pagamento = $3,
-                data_vencimento = $4,
-                tipo = $5,
-                id_categoria = $6,
-                id_subcategoria = $7
-            WHERE id_transacao = $8
-            RETURNING *
-        `, [
-            valor,
-            descricao,
-            data_pagamento,
-            data_vencimento,
-            tipo,
-            id_categoria,
-            id_subcategoria,
-            id_transacao
-        ]);
-
-        await client.query('COMMIT');
-
-        res.status(200).json(resultado.rows[0]);
-
+        return res.status(200).json('Transação foi atualizada!');
     } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Erro ao atualizar transação:', error);
-        res.status(500).json("Erro interno no servidor");
-    } finally {
-        client.release();
+        console.error('Erro ao atualizar transacoes', error.message);
+        return res.status(500).json({ error: 'Erro ao atualizar transacoes' + error.message })
     }
-});
+})
 
-
-// 📌 PATCH (igual ao seu padrão)
+//Rota patch atualizando parcialmente as informações
 router.patch('/transacoes/:id_transacao', async (req, res) => {
     const { id_transacao } = req.params;
-
-    const client = await BD.connect();
+    const { valor, descricao, data_vencimento, data_pagamento, tipo, id_subcategoria, id_categoria } = req.body;
 
     try {
-        await client.query('BEGIN');
-
-        const verificar = await client.query(
-            `SELECT * FROM transacoes WHERE id_transacao = $1`,
-            [id_transacao]
-        );
-
-        if (verificar.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(404).json("Transação não encontrada");
+        //Verificar se a transacao existe
+        const verificarTransacao = await BD.query(`SELECT * FROM TRANSACOES
+            WHERE id_transacao = $1`, [id_transacao])
+        if (verificarTransacao.rows.length === 0) {
+            return res.status(404).json({ message: 'Transação não encontrada' })
         }
 
-        const campos = Object.entries(req.body)
-            .filter(([_, value]) => value !== undefined)
-            .map(([key, _], index) => `${key} = $${index + 1}`)
-            .join(', ');
+        //Montar o update dinamicamente(apenas campos enviados)
+        const campos = [];
+        const valores = [];
+        let contador = 1;
 
-        const valores = Object.values(req.body)
-            .filter(value => value !== undefined);
+        if (valor !== undefined) {
+            campos.push(`valor = $${contador}`);
+            valores.push(valor);
+            contador++;
+        }
+        if (descricao !== undefined) {
+            campos.push(`descricao = $${contador}`);
+            valores.push(descricao);
+            contador++;
+        }
+        if (data_vencimento !== undefined) {
+            campos.push(`data_vencimento = $${contador}`);
+            valores.push(data_vencimento);
+            contador++;
+        }
+        if (data_pagamento !== undefined) {
+            campos.push(`data_pagamento = $${contador}`);
+            valores.push(data_pagamento);
+            contador++;
+        }
+        if (tipo !== undefined) {
+            campos.push(`tipo = $${contador}`);
+            valores.push(tipo);
+            contador++;
+        }
+        if (id_subcategoria !== undefined) {
+            campos.push(`id_subcategoria = $${contador}`);
+            valores.push(id_subcategoria);
+            contador++;
+        }
+        if (id_categoria !== undefined) {
+            campos.push(`id_categoria = $${contador}`);
+            valores.push(id_categoria);
+            contador++;
+        }
 
+
+        //se nenhum campo foi enviado
+        if (campos.length === 0) {
+            return res.status(400).json({ message: "Nenhum campo a atualizar" })
+        }
+
+        //Adicionando ID ao final de valores
         valores.push(id_transacao);
 
-        const comando = `
-            UPDATE transacoes 
-            SET ${campos} 
-            WHERE id_transacao = $${valores.length}
-            RETURNING *
-        `;
+        //montando a query dinamicamente
+        const comando = `UPDATE TRANSACOES SET ${campos.join(', ')} WHERE id_transacao = $${contador}`
+        await BD.query(comando, valores)
 
-        const resultado = await client.query(comando, valores);
-
-        await client.query('COMMIT');
-
-        res.status(200).json(resultado.rows[0]);
-
+        return res.status(200).json('Transação atualizada com sucesso');
     } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Erro ao atualizar transação:', error);
-        res.status(500).json("Erro interno no servidor");
-    } finally {
-        client.release();
+        console.error('Erro ao atualizar transacao', error.message)
+        return res.status(500).json({ message: "Erro interno so servidor" + error.message })
     }
-});
+})
 
-
-// 📌 DELETE (hard delete mesmo, já que não tem "ativo")
 router.delete('/transacoes/:id_transacao', async (req, res) => {
     const { id_transacao } = req.params;
+    try {
+        //Executa o comando de delete
+        const comando = `DELETE FROM TRANSACOES WHERE id_transacao = $1`
+        await BD.query(comando, [id_transacao])
+        return res.status(200).json({ message: "Transação removida com sucesso" })
+    } catch (error) {
+        console.error('Erro ao remover transacao', error.message)
+        return res.status(500).json({ message: "Erro interno so servidor" + error.message })
+    }
+})
 
-    const client = await BD.connect();
+router.get('/transacoes/tipo/:tipo', async (req, res) => {
+    const { tipo } = req.params;
 
     try {
-        await client.query('BEGIN');
-
-        const verificar = await client.query(
-            `SELECT * FROM transacoes WHERE id_transacao = $1`,
-            [id_transacao]
-        );
-
-        if (verificar.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(404).json("Transação não encontrada");
+        if (tipo !== 'E' && tipo !== 'S') {
+            return res.status(400).json({ message: 'Tipo inválido. Use E para entrada e S para saída' })
         }
 
-        await client.query(
-            `DELETE FROM transacoes WHERE id_transacao = $1`,
-            [id_transacao]
-        );
+        const query = `SELECT t.id_transacao,
+        t.valor,
+        t.descricao,
+        to_char(t.data_registro, 'DD/MM/YYYY') AS data_registro,
+        to_char(t.data_vencimento, 'DD/MM/YYYY') AS vencimento,
+        to_char(t.data_pagamento, 'DD/MM/YYYY') AS data_pagamento,
+        t.tipo,
+        c.nome as nome_categoria,
+        s.nome as nome_subcategoria
+        From transacoes t
+        left join categorias as c on t.id_categoria = c.id_categoria
+        left join subcategorias s on t.id_subcategoria = s.id_subcategoria
+        where t.tipo = $1
+        order by t.data_registro DESC`
 
-        await client.query('COMMIT');
-
-        res.status(200).json("Transação deletada com sucesso");
-
+        //cria uma variavel para receber o retorno do sql
+        const transacoes = await BD.query(query, [tipo]);
+        return res.status(200).json(transacoes.rows);
     } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Erro ao deletar transação:', error);
-        res.status(500).json("Erro interno no servidor");
-    } finally {
-        client.release();
+        console.error('Erro ao listar tipo', error.message)
+        return res.status(500).json({ message: "Erro interno so servidor" + error.message })
     }
-});
+})
+router.get('/transacoes/categoria/:id_categoria', async (req, res) => {
+    const { id_categoria } = req.params;
+
+    try {
+        const query = `SELECT t.id_transacao,
+        t.valor,
+        t.descricao,
+        to_char(t.data_registro, 'DD/MM/YYYY') AS data_registro,
+        to_char(t.data_vencimento, 'DD/MM/YYYY') AS vencimento,
+        to_char(t.data_pagamento, 'DD/MM/YYYY') AS data_pagamento,
+        t.tipo,
+        c.nome as nome_categoria,
+        s.nome as nome_subcategoria
+        From transacoes t
+        left join categorias as c on t.id_categoria = c.id_categoria
+        left join subcategorias s on t.id_subcategoria = s.id_subcategoria
+        where t.id_categoria = $1
+        order by t.data_registro DESC`
+
+        //cria uma variavel para receber o retorno do sql
+        const transacoes = await BD.query(query, [id_categoria]);
+        return res.status(200).json(transacoes.rows);
+    } catch (error) {
+        console.error('Erro ao listar categoria', error.message)
+        return res.status(500).json({ message: "Erro interno so servidor" + error.message })
+    }
+})
+router.get('/transacoes/subcategoria/:id_subcategoria', async (req, res) => {
+    const { id_subcategoria } = req.params;
+    try {
+        const query = `SELECT t.id_transacao,
+        t.valor,
+        t.descricao,
+        to_char(t.data_registro, 'DD/MM/YYYY') AS data_registro,
+        to_char(t.data_vencimento, 'DD/MM/YYYY') AS vencimento,
+        to_char(t.data_pagamento, 'DD/MM/YYYY') AS data_pagamento,
+        t.tipo,
+        c.nome as nome_categoria,
+        s.nome as nome_subcategoria
+        From transacoes t
+        left join categorias as c on t.id_categoria = c.id_categoria
+        left join subcategorias s on t.id_subcategoria = s.id_subcategoria
+        where t.id_subcategoria = $1
+        order by t.data_registro DESC`
+
+        //cria uma variavel para receber o retorno do sql
+        const transacoes = await BD.query(query, [id_subcategoria]);
+        return res.status(200).json(transacoes.rows);
+    } catch (error) {
+        console.error('Erro ao listar subcategoria', error.message)
+        return res.status(500).json({ message: "Erro interno so servidor" + error.message })
+    }
+})
 
 
-export default router;
+export default router

@@ -6,6 +6,7 @@ import documentacao from "./config/swagger.js";
 import rotasUsuarios from "./src/routes/rotasUsuarios.js";
 import rotasCategorias from "./src/routes/rotasCategorias.js";
 import rotasTransacoes from "./src/routes/rotasTransacoes.js";
+import rotasSubcategorias from "./src/routes/rotasSubcategorias.js";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use("/swagger", swaggerUi.serve, swaggerUi.setup(documentacao));
 app.use("/", rotasUsuarios);
 app.use("/", rotasCategorias);
 app.use("/", rotasTransacoes);
+app.use("/", rotasSubcategorias);
 
 app.get("/", (req, res) => {
     res.send("API rodando!");
