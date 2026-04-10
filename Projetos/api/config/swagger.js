@@ -882,6 +882,69 @@ const documentacao = {
                 }
             }
         },
+        "/transacoes/periodo": {
+            get: {
+                tags: ["Transações"],
+                summary: "Listar transações por período",
+                description: "Retorna uma lista de transações filtradas pelo período",
+                parameters: [
+                    {
+                        name: "data_inicio",
+                        in: "query",
+                        required: true,
+                        description: "Data de inicio para filtrar as transações",
+                        schema: {
+                            type: "string",
+                            format: "date",
+                            example: "2023-06-01"
+                        }
+                    },
+                    {
+                        name: "data_fim",
+                        in: "query",
+                        required: true,
+                        description: "Data de fim para filtrar as transações",
+                        schema: {
+                            type: "string",
+                            format: "date",
+                            example: "2023-06-30"
+                        }
+                    }
+                ],
+                responses: {
+                    200: {
+                        description: "Lista de transações por período",
+                        content: {
+                            "application/json": {
+                                schema: {
+                                    type: "array",
+                                    items: { $ref: "#/components/schemas/Listar_Transacao" },
+                                    example: {
+                                        "id": 1,
+                                        "id_subcategoria": 1,
+                                        "id_categoria": 1,
+                                        "id_conta": 1,
+                                        "tipo": "E",
+                                        "valor": 10.00,
+                                        "descricao": "Pagamento de conta de luz",
+                                        "data_vencimento": "2023-06-01",
+                                        "data_pagamento": "2023-06-01",
+                                        "data_registro": "2023-06-01"
+                                    }
+
+                                }
+                            }
+                        }
+                    },
+                    404: {
+                        description: "Nenhuma transação encontrada para o tipo especificado"
+                    },
+                    500: {
+                        description: "Erro interno no servidor"
+                    }
+                }
+            }
+        },
 
         components: {
             schemas: {

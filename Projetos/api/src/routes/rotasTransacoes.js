@@ -249,6 +249,32 @@ router.get('/transacoes/subcategoria/:id_subcategoria', async (req, res) => {
         return res.status(500).json({ message: "Erro interno so servidor" + error.message })
     }
 })
+router.get('/transacoes/periodo', async (req, res) => {
+    const { data_inicio, data_fim } = req.query;
+    try {
+        const query = `SELECT t.id_transacao,
+        t.valor,
+        t.descricao,
+        to_char(t.data_registro, 'DD/MM/YYYY') AS data_registro,
+        to_char(t.data_vencimento, 'DD/MM/YYYY') AS vencimento,
+        to_char(t.data_pagamento, 'DD/MM/YYYY') AS data_pagamento,
+        t.tipo,
+        c.nome as nome_categoria,
+        s.nome as nome_subcategoria
+        From transacoes t
+        left join categorias as c on t.id_categoria = c.id_categoria
+        left join subcategorias s on t.id_subcategoria = s.id_subcategoria
+        where t.data_registro between $1 and $2
+        order by t.data_registro DESC`
+
+        //cria uma variavel para receber o retorno do sql
+        const transacoes = await BD.query(query, [data_inicio, data_fim]);
+        return res.status(200).json(transacoes.rows);
+    } catch (error) {
+        console.error('Erro ao listar periodo', error.message)
+        return res.status(500).json({ message: "Erro interno so servidor" + error.message })
+    }
+})
 
 
 export default router

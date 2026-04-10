@@ -1,45 +1,16 @@
-//Aqui é onde importaremos todas as bibliotecas e componentes e utilizaremos
-
-import { StatusBar } from 'expo-status-bar';
-
-//todo componente visual utilizando em react native precisa ser importado
-import { StyleSheet, Text, View } from 'react-native';
-
-//componente tradicional
+import { ScrollView } from "react-native";
+import Aula01 from "./src/components/Aula01";
+import Aula02 from "./src/components/Aula02";
 export default function App() {
   return (
-    //O componente View, corresponde ao div, main, section, header do html
-    <View style={estilos.container}>
-      {/*O componente Text corresponde ao p, h1, h2, h3, span do html*/ }
-      <Text style={estilos.titulo}>Hello world</Text>
-      <Text style={estilos.titulo}>Olá, esse é meu primeiro App!</Text>
-      {/* Defino e estilizo a barra de status do dispositivo*/ }
-      <StatusBar style="auto" />
+    <ScrollView style={{ flex: 1, backgroundColor: "#fff"}}>
 
-      {/*Aqui Vou colocar o exercico*/ }
-      <Text style={{fontSize: 20, color: 'blue', textAlign: 'left', width: 1000}}>Texto 1</Text>
-      <Text style={{fontSize: 20, color: 'black', textAlign: 'right', fontWeight: 'bold', width: 1000}}>Texto 2</Text>
-      <hr/>
-      <Text style={{fontSize: 20, color: 'red', textAlign: 'center'}}>Texto 3</Text>
-    </View>
+      <Aula01 />
+      <Aula02 />
+
+      
+
+    </ScrollView>
   );
-} 
-//Para estilizarmos em react native, importamos o StyleSheet
-// e fazermos um objeto estlização igual ao react
-const estilos = StyleSheet.create({
-  container: {
-    width: '100%',
-    flex: 1,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  titulo: {
-    fontSize: 30,
-    fontWeight: 'bold',
-  },
-  texto: {
-    fontSize: 20,
-    color: 'blue',
-  },
-});
+}
+
