@@ -1053,4 +1053,4 @@ const documentacao = {
 
 
 
-export default documentacao;
+export default documentacao
